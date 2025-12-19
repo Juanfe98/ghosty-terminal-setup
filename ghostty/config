@@ -5,7 +5,7 @@ custom-shader = shaders/cursor_smear_gentleman.glsl
 # Safe configuration - does not affect shell, aliases, or work settings
 
 # Theme - Catppuccin Mocha (dark, modern, easy on eyes)
-theme = catppuccin mocha
+theme = catppuccin-mocha.conf
 
 # Font Configuration
 font-family = IosevkaTerm NF
