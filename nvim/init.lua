@@ -393,7 +393,6 @@ vim.keymap.set("v", ">", ">gv", { desc = "Indent right" })
 vim.keymap.set("v", "J", ":m '>+1<cr>gv=gv", { desc = "Move selection down" })
 vim.keymap.set("v", "K", ":m '<-2<cr>gv=gv", { desc = "Move selection up" })
 
--- Open temporal buffer getting dynamically the filetype from other window
 vim.keymap.set("n", "<leader>sv", function()
   local ft = vim.bo.filetype
   vim.cmd("vnew")
@@ -402,3 +401,13 @@ vim.keymap.set("n", "<leader>sv", function()
   vim.bo.buftype = ""
   vim.cmd("setlocal filetype=" .. ft)
 end, { desc = "Scratch vsplit (match filetype)" })
+
+vim.keymap.set("n", "<leader>bb", require("telescope.builtin").buffers, {
+  desc = "Open recent buffers",
+})
+
+vim.keymap.set("n", "<leader>tc", ":tabclose<CR>", { desc = "Close tab" })
+vim.keymap.set("n", "<leader>bd", ":bp | bd #<CR>", {
+  silent = true,
+  desc = "Delete buffer (no plugin)",
+})
