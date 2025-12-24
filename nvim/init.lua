@@ -98,13 +98,13 @@ require("lazy").setup({
     end,
   },
 
-  -- File explorer
+  -- File explorer, commenting this as i think i am not gonna need it 
   {
     "nvim-tree/nvim-tree.lua",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
       require("nvim-tree").setup()
-      vim.keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<cr>", { silent = true, desc = "Explorer" })
+      vim.keymap.set("n", "<leader>es", "<cmd>NvimTreeToggle<cr>", { silent = true, desc = "Explorer" })
     end,
   },
 
@@ -117,9 +117,22 @@ require("lazy").setup({
       require("telescope").setup({})
       local builtin = require("telescope.builtin")
       vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find Files" })
-      vim.keymap.set("n", "<leader>fg", builtin.live_grep,  { desc = "Find by Grep" })
-      vim.keymap.set("n", "<leader>fb", builtin.buffers,    { desc = "Find Buffers" })
-      vim.keymap.set("n", "<leader>fh", builtin.help_tags,  { desc = "Find Help" })
+      vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Find by Grep" })
+      vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find Buffers" })
+      vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Find Help" })
+
+      -- Git quick access with telescope
+      vim.keymap.set("n", "<leader>gs", builtin.git_status,   { desc = "Git status (Telescope)" })
+      vim.keymap.set("n", "<leader>gb", builtin.git_branches, { desc = "Git branches" })
+      vim.keymap.set("n", "<leader>gc", builtin.git_commits,  { desc = "Git commits (repo)" })
+      vim.keymap.set("n", "<leader>gC", builtin.git_bcommits, { desc = "Git commits (current file)" })
+
+      -- Go to ~ code with telescope
+      vim.keymap.set("n","gd",require("telescope.builtin").lsp_definitions,{desc="LSP definitions (Telescope)"})
+      vim.keymap.set("n","gD",require("telescope.builtin").lsp_type_definitions,{desc="LSP type definitions (Telescope)"})
+      vim.keymap.set("n","gr",require("telescope.builtin").lsp_references,{desc="LSP references (Telescope)"})
+      vim.keymap.set("n","gi",require("telescope.builtin").lsp_implementations,{desc="LSP implementations (Telescope)"})
+
     end,
   },
 
@@ -135,7 +148,7 @@ require("lazy").setup({
     },
     dependencies = { "nvim-lua/plenary.nvim" }, -- optional, but nice for floating window behavior
     keys = {
-      { "<leader>gg", "<cmd>LazyGit<cr>", desc = "LazyGit" },
+      { "<leader>gg", "<cmd>LazyGit<cr>",            desc = "LazyGit" },
       { "<leader>gF", "<cmd>LazyGitCurrentFile<cr>", desc = "LazyGit (current file)" },
     },
   },
@@ -208,7 +221,7 @@ require("lazy").setup({
       require("mason-lspconfig").setup({
         ensure_installed = {
           "lua_ls",
-          "ts_ls",         -- replaces tsserver
+          "ts_ls", -- replaces tsserver
           "pyright",
           "gopls",
           "rust_analyzer",
@@ -240,9 +253,9 @@ require("lazy").setup({
         group = vim.api.nvim_create_augroup("UserLspConfig", {}),
         callback = function(ev)
           local opts = { buffer = ev.buf }
-          vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+          -- vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
           vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-          vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+          -- vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
           vim.keymap.set("n", "<space>rn", vim.lsp.buf.rename, opts)
           vim.keymap.set({ "n", "v" }, "<space>ca", vim.lsp.buf.code_action, opts)
           vim.keymap.set("n", "<space>f", function()
@@ -305,12 +318,80 @@ require("lazy").setup({
     end,
   },
 
-  -- Git signs
+  -- Git signs (gitsigns)
   {
     "lewis6991/gitsigns.nvim",
-    config = function()
-      require("gitsigns").setup()
-    end,
+    event = { "BufReadPre", "BufNewFile" },
+    opts = {
+      -- Don’t spam blame all the time; toggle it when needed
+      current_line_blame = false,
+      current_line_blame_opts = {
+        delay = 800,
+        use_focus = true,
+      },
+
+      -- Optional: show different signs for staged changes
+      signcolumn = true,
+      -- staged signs are supported by gitsigns; if you like them, keep this on
+      -- (some people prefer minimalism and turn it off)
+      -- show_staged = true,
+
+      -- Good safety: disable in huge files (adjust to taste)
+      max_file_length = 40000,
+
+      on_attach = function(bufnr)
+        local gs = require("gitsigns")
+
+        local function map(mode, lhs, rhs, desc)
+          vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc })
+        end
+
+        -- Jump between hunks (like ]d/[d but for git changes)
+        map("n", "]c", function()
+          if vim.wo.diff then return vim.cmd.normal({ "]c", bang = true }) end
+          gs.nav_hunk("next")
+        end, "Next hunk")
+
+        map("n", "[c", function()
+          if vim.wo.diff then return vim.cmd.normal({ "[c", bang = true }) end
+          gs.nav_hunk("prev")
+        end, "Prev hunk")
+
+        -- Preview / diff
+        map("n", "<leader>ghp", gs.preview_hunk, "Preview hunk")
+        map("n", "<leader>ghi", gs.preview_hunk_inline, "Preview hunk inline")
+        map("n", "<leader>ghd", gs.diffthis, "Diff this file")
+
+        -- Stage/reset like `git add -p`
+        map("n", "<leader>ghs", gs.stage_hunk, "Stage hunk")
+        map("n", "<leader>ghr", gs.reset_hunk, "Reset hunk")
+        map("n", "<leader>ghu", gs.undo_stage_hunk, "Undo stage hunk")
+        map("n", "<leader>ghS", gs.stage_buffer, "Stage buffer")
+        map("n", "<leader>ghR", gs.reset_buffer, "Reset buffer")
+
+        -- Visual-mode stage/reset selection
+        map("v", "<leader>ghs", function()
+          gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end, "Stage selection")
+        map("v", "<leader>ghr", function()
+          gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") })
+        end, "Reset selection")
+
+        -- Blame
+        map("n", "<leader>ghb", function()
+          gs.blame_line({ full = true })
+        end, "Blame line (full)")
+        map("n", "<leader>ght", gs.toggle_current_line_blame, "Toggle line blame")
+
+        -- Quickfix list of hunks (nice for reviewing all changes)
+        map("n", "<leader>ghq", function()
+          gs.setqflist("all")
+        end, "Hunks -> quickfix")
+
+        -- Text object (operate on a hunk)
+        map({ "o", "x" }, "ih", gs.select_hunk, "Select hunk")
+      end,
+    },
   },
 
   -- Autopairs
@@ -366,6 +447,37 @@ require("lazy").setup({
       require("which-key").setup()
     end,
   },
+
+  -- Oil
+  {
+    "stevearc/oil.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("oil").setup({
+        default_file_explorer = false,
+        view_options = { show_hidden = true },
+      })
+
+      vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
+      -- Open Oil in a vertical split (nice for comparing/moving files)
+      vim.keymap.set("n", "<leader>O", "<cmd>vsplit | Oil<CR>", { desc = "Oil (vsplit)" })
+    end,
+  },
+
+
+  -- Comment toggles (context-aware for JSX/TSX)
+  {
+    "numToStr/Comment.nvim",
+    dependencies = {
+      "JoosepAlviste/nvim-ts-context-commentstring",
+    },
+    config = function()
+      local ok, ts_integration = pcall(require, "ts_context_commentstring.integrations.comment_nvim")
+      require("Comment").setup({
+        pre_hook = ok and ts_integration.create_pre_hook() or nil,
+      })
+    end,
+  },
 })
 
 -- ============================================================================
@@ -411,3 +523,9 @@ vim.keymap.set("n", "<leader>bd", ":bp | bd #<CR>", {
   silent = true,
   desc = "Delete buffer (no plugin)",
 })
+
+vim.keymap.set("n", "<leader>cp", function()
+  local path = vim.fn.expand("%") -- path relative to cwd
+  vim.fn.setreg("+", path)
+  vim.notify("Copied: " .. path)
+end, { desc = "Copy relative file path" })
