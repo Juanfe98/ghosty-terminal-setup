@@ -104,7 +104,7 @@ require("lazy").setup({
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
       require("nvim-tree").setup()
-      vim.keymap.set("n", "<leader>es", "<cmd>NvimTreeToggle<cr>", { silent = true, desc = "Explorer" })
+      vim.keymap.set("n", "<leader>tt", "<cmd>NvimTreeToggle<cr>", { silent = true, desc = "Explorer" })
     end,
   },
 
@@ -114,7 +114,15 @@ require("lazy").setup({
     tag = "v0.2.0",
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
-      require("telescope").setup({})
+      require("telescope").setup({
+        defaults = {
+          path_display = function(_, path)
+            local utils = require("telescope.utils")
+            local tail = utils.path_tail(path)
+            return string.format("%s  (%s)", tail, path)
+          end,
+        },
+      })
       local builtin = require("telescope.builtin")
       vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find Files" })
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Find by Grep" })
@@ -243,7 +251,9 @@ require("lazy").setup({
       vim.lsp.enable(servers)
 
       -- Diagnostics UI
-      vim.keymap.set("n", "<space>e", vim.diagnostic.open_float, { desc = "Diag float" })
+      vim.keymap.set("n", "<space>e", function()
+        vim.diagnostic.open_float(nil, { border = "rounded", source = "if_many" })
+      end, { desc = "Diag float" })
       vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Prev diag" })
       vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Next diag" })
       vim.keymap.set("n", "<space>q", vim.diagnostic.setloclist, { desc = "Diag list" })
@@ -476,6 +486,76 @@ require("lazy").setup({
       require("Comment").setup({
         pre_hook = ok and ts_integration.create_pre_hook() or nil,
       })
+    end,
+  },
+
+  -- tiny-inline-diagnostic
+  {
+    "rachartier/tiny-inline-diagnostic.nvim",
+    event = "VeryLazy",
+    priority = 1000, -- load early so highlights/preset feel consistent
+    opts = {
+      preset = "amongus",
+      transparent_cursorline = true,
+      transparent_bg = false,
+
+
+      -- optional: avoid noise in UI buffers
+      disabled_ft = {
+        "TelescopePrompt",
+        "lazy",
+        "mason",
+        "help",
+        "NvimTree",
+        "oil",
+      },
+
+      options = {
+        -- keeps it snappy but not “twitchy”
+        throttle = 20,
+
+        -- wrap long messages nicely
+        softwrap = 30,
+        overflow = { mode = "wrap", padding = 0 },
+
+        -- show LSP source only when it actually helps
+        show_source = { enabled = true, if_many = true },
+
+        -- multiline is nice for TS errors (stacky messages)
+        multilines = {
+          enabled = true,
+          always_show = false,
+          trim_whitespaces = true,
+        },
+
+        -- keep it clean while you type/select
+        enable_on_insert = false,
+        enable_on_select = false,
+
+        -- prevents “inline + float” visual clutter
+        override_open_float = true,
+
+        -- related info can be useful, but keep it small
+        show_related = { enabled = true, max_count = 2 },
+      },
+    },
+    config = function(_, opts)
+      require("tiny-inline-diagnostic").setup(opts)
+
+      -- IMPORTANT: disable built-in virtual_text to avoid duplicates
+      vim.diagnostic.config({
+        virtual_text = false,
+        signs = true,
+        underline = true,
+        update_in_insert = false,
+        severity_sort = true,
+        float = { border = "rounded", source = "if_many" },
+      })
+
+      -- handy toggles (pick whatever leader keys you like)
+      vim.keymap.set("n", "<leader>dt", "<cmd>TinyInlineDiag toggle<cr>", { desc = "Toggle inline diagnostics" })
+      vim.keymap.set("n", "<leader>de", "<cmd>TinyInlineDiag enable<cr>", { desc = "Enable inline diagnostics" })
+      vim.keymap.set("n", "<leader>dd", "<cmd>TinyInlineDiag disable<cr>", { desc = "Disable inline diagnostics" })
     end,
   },
 })
