@@ -126,6 +126,9 @@ require("lazy").setup({
       local builtin = require("telescope.builtin")
       vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find Files" })
       vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Find by Grep" })
+      vim.keymap.set("n", "<leader>fr", function()
+        require("telescope.builtin").oldfiles({ only_cwd = true })
+      end, { desc = "Recent files (cwd)" })
       vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find Buffers" })
       vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Find Help" })
 
@@ -558,6 +561,56 @@ require("lazy").setup({
       vim.keymap.set("n", "<leader>dd", "<cmd>TinyInlineDiag disable<cr>", { desc = "Disable inline diagnostics" })
     end,
   },
+
+ -- Pretty floating notifications
+  {
+    "rcarriga/nvim-notify",
+    event = "VeryLazy",
+    opts = {
+      timeout = 2500,
+      render = "wrapped-default",
+      stages = "fade_in_slide_out",
+      top_down = true,
+      max_height = function()
+        return math.floor(vim.o.lines * 0.75)
+      end,
+      max_width = function()
+        return math.floor(vim.o.columns * 0.4)
+      end,
+    },
+    config = function(_, opts)
+      local notify = require("notify")
+      notify.setup(opts)
+
+      -- Make Neovim + plugins use nvim-notify
+      vim.notify = notify
+    end,
+  },
+
+  -- Markdown live preview (browser)
+  {
+    "iamcco/markdown-preview.nvim",
+    ft = { "markdown" },
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    config = function()
+      -- Don’t auto-start; you control it
+      vim.g.mkdp_auto_start = 0
+      vim.g.mkdp_auto_close = 1
+      vim.g.mkdp_refresh_slow = 0
+
+      -- Safety: only local
+      vim.g.mkdp_open_to_the_world = 0
+
+      -- Optional: open with default browser (usually fine)
+      -- vim.g.mkdp_browser = "open" -- macOS default
+
+      -- Handy keymaps
+      vim.keymap.set("n", "<leader>mp", "<cmd>MarkdownPreviewToggle<cr>", { desc = "Markdown Preview" })
+      vim.keymap.set("n", "<leader>ms", "<cmd>MarkdownPreviewStop<cr>", { desc = "Markdown Preview Stop" })
+    end,
+  },
 })
 
 -- ============================================================================
@@ -607,5 +660,17 @@ vim.keymap.set("n", "<leader>bd", ":bp | bd #<CR>", {
 vim.keymap.set("n", "<leader>cp", function()
   local path = vim.fn.expand("%") -- path relative to cwd
   vim.fn.setreg("+", path)
-  vim.notify("Copied: " .. path)
+  vim.notify("Copied to clipboard " .. path)
 end, { desc = "Copy relative file path" })
+
+
+-- ============================================================================
+-- Autocmds functions 
+-- ============================================================================
+
+-- highlight text once is yanked
+vim.api.nvim_create_autocmd("TextYankPost", {
+  callback = function()
+    vim.highlight.on_yank({ timeout = 150 })
+  end,
+})
