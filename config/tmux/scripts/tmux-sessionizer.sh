@@ -13,7 +13,7 @@ else
   exit 1
 fi
 
-SEARCH_ROOT="$HOME/Documents/repositories"
+SEARCH_ROOT="/Users/juan/Documents/repositories"
 
 [ -d "$SEARCH_ROOT" ] || {
   tmux display-message "tmux-sessionizer: search root not found"
@@ -22,14 +22,11 @@ SEARCH_ROOT="$HOME/Documents/repositories"
 
 selected="$(
   find "$SEARCH_ROOT" \
-    -mindepth 1 -maxdepth 2 -type d \
-    ! -name '.*' \
-    ! -name node_modules \
-    ! -name dist \
-    ! -name build \
+    -mindepth 1 -maxdepth 2 -type d -name .git \
     2>/dev/null \
+    | sed 's|/.git$||' \
     | sort \
-    | "$FZF_BIN" --prompt='Project > ' --height=40% --layout=reverse --border
+    | "$FZF_BIN" --prompt='Repo > ' --height=40% --layout=reverse --border
 )"
 
 [ -n "${selected:-}" ] || exit 0
