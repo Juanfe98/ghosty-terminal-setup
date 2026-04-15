@@ -54,7 +54,6 @@ vim.opt.splitright = true
 vim.opt.showmode = false
 vim.opt.incsearch = true
 vim.opt.hlsearch = true
-vim.opt.hidden = true
 vim.opt.wrap = false
 vim.opt.swapfile = false
 vim.opt.backup = false
@@ -62,7 +61,8 @@ vim.opt.expandtab = true
 vim.opt.shiftwidth = 2
 vim.opt.tabstop = 2
 vim.opt.autoindent = true
-vim.opt.smartindent = true
+-- vim.opt.smartindent = true
+vim.opt.hidden = true
 vim.opt.cursorline = true
 vim.opt.list = true
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
@@ -202,6 +202,17 @@ require("lazy").setup({
       -- Enable treesitter highlighting (native)
       vim.api.nvim_create_autocmd("FileType", {
         callback = function(args)
+          local bt = vim.bo[args.buf].buftype
+          local ft = vim.bo[args.buf].filetype
+
+          if bt ~= "" then
+            return
+          end
+
+          if ft == "NvimTree" or ft == "oil" or ft == "help" or ft == "lazy" or ft == "mason" then
+            return
+          end
+
           pcall(vim.treesitter.start, args.buf)
         end,
       })
@@ -416,14 +427,6 @@ require("lazy").setup({
     end,
   },
 
-  -- Comment toggles
-  {
-    "numToStr/Comment.nvim",
-    config = function()
-      require("Comment").setup()
-    end,
-  },
-
   -- Indentation guides
   {
     "lukas-reineke/indent-blankline.nvim",
@@ -485,9 +488,12 @@ require("lazy").setup({
       "JoosepAlviste/nvim-ts-context-commentstring",
     },
     config = function()
-      local ok, ts_integration = pcall(require, "ts_context_commentstring.integrations.comment_nvim")
+      require("ts_context_commentstring").setup({
+        enable_autocmd = false,
+      })
+
       require("Comment").setup({
-        pre_hook = ok and ts_integration.create_pre_hook() or nil,
+        pre_hook = require("ts_context_commentstring.integrations.comment_nvim").create_pre_hook(),
       })
     end,
   },
@@ -562,6 +568,76 @@ require("lazy").setup({
     end,
   },
 
+  -- Diagnosis
+  {
+    "folke/trouble.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    opts = {},
+    cmd = "Trouble",
+    keys = {
+      { "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", desc = "Workspace diagnostics" },
+      { "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", desc = "Buffer diagnostics" },
+      { "<leader>xr", "<cmd>Trouble lsp_references toggle<cr>", desc = "References" },
+      { "<leader>xq", "<cmd>Trouble qflist toggle<cr>", desc = "Quickfix" },
+      { "<leader>xl", "<cmd>Trouble loclist toggle<cr>", desc = "Location list" },
+    },
+  },
+
+  {
+    "stevearc/aerial.nvim",
+    dependencies = {
+      "nvim-treesitter/nvim-treesitter",
+      "nvim-tree/nvim-web-devicons",
+    },
+    opts = {
+      backends = { "lsp", "treesitter", "markdown", "man" },
+      layout = {
+        min_width = 28,
+        default_direction = "prefer_right",
+      },
+      show_guides = true,
+      filter_kind = false,
+      attach_mode = "global",
+      close_automatic_events = {},
+    },
+    keys = {
+      { "<leader>a", "<cmd>AerialToggle!<cr>", desc = "Aerial toggle" },
+      { "]a", "<cmd>AerialNext<cr>", desc = "Next symbol" },
+      { "[a", "<cmd>AerialPrev<cr>", desc = "Prev symbol" },
+    },
+  },
+
+  -- Todo comments
+  {
+    "folke/todo-comments.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    opts = {
+      highlight = {
+        comments_only = true,
+        exclude = { "NvimTree", "oil", "lazy", "mason", "help", "TelescopePrompt" },
+      },
+    },
+    keys = {
+      {
+        "]t",
+        function()
+          require("todo-comments").jump_next()
+        end,
+        desc = "Next todo comment",
+      },
+      {
+        "[t",
+        function()
+          require("todo-comments").jump_prev()
+        end,
+        desc = "Previous todo comment",
+      },
+      { "<leader>st", "<cmd>TodoTelescope<cr>", desc = "Search TODOs (Telescope)" },
+      { "<leader>xt", "<cmd>TodoTrouble<cr>", desc = "TODOs (Trouble)" },
+      { "<leader>xT", "<cmd>TodoQuickFix<cr>", desc = "TODOs (Quickfix)" },
+    },
+  },
+
  -- Pretty floating notifications
   {
     "rcarriga/nvim-notify",
@@ -584,31 +660,6 @@ require("lazy").setup({
 
       -- Make Neovim + plugins use nvim-notify
       vim.notify = notify
-    end,
-  },
-
-  -- Markdown live preview (browser)
-  {
-    "iamcco/markdown-preview.nvim",
-    ft = { "markdown" },
-    build = function()
-      vim.fn["mkdp#util#install"]()
-    end,
-    config = function()
-      -- Don’t auto-start; you control it
-      vim.g.mkdp_auto_start = 0
-      vim.g.mkdp_auto_close = 1
-      vim.g.mkdp_refresh_slow = 0
-
-      -- Safety: only local
-      vim.g.mkdp_open_to_the_world = 0
-
-      -- Optional: open with default browser (usually fine)
-      -- vim.g.mkdp_browser = "open" -- macOS default
-
-      -- Handy keymaps
-      vim.keymap.set("n", "<leader>mp", "<cmd>MarkdownPreviewToggle<cr>", { desc = "Markdown Preview" })
-      vim.keymap.set("n", "<leader>ms", "<cmd>MarkdownPreviewStop<cr>", { desc = "Markdown Preview Stop" })
     end,
   },
 })
@@ -652,10 +703,15 @@ vim.keymap.set("n", "<leader>bb", require("telescope.builtin").buffers, {
 })
 
 vim.keymap.set("n", "<leader>tc", ":tabclose<CR>", { desc = "Close tab" })
-vim.keymap.set("n", "<leader>bd", ":bp | bd #<CR>", {
-  silent = true,
-  desc = "Delete buffer (no plugin)",
-})
+
+vim.keymap.set("n", "<leader>bd", function()
+  local current = vim.api.nvim_get_current_buf()
+  vim.cmd("bprevious")
+  if vim.api.nvim_get_current_buf() == current then
+    vim.cmd("enew")
+  end
+  vim.cmd("bdelete " .. current)
+end, { silent = true, desc = "Delete buffer safely" })
 
 vim.keymap.set("n", "<leader>cp", function()
   local path = vim.fn.expand("%") -- path relative to cwd
