@@ -32,38 +32,39 @@ setopt AUTO_MENU
 # Oh My Zsh
 # =========================
 ZSH_THEME="robbyrussell"
+ZSH_DISABLE_COMPFIX=true
+DISABLE_AUTO_UPDATE=true
 plugins=(
   git
   z
   sudo
   history
   colored-man-pages
-  command-not-found
 )
 
+DISABLE_MAGIC_FUNCTIONS=true
+ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${ZSH_VERSION}"
+# Prevent inherited/exported FPATH or repeated `source ~/.zshrc` from duplicating
+# completion paths, which can force slow compdump rebuilds.
+typeset -gU fpath FPATH
+typeset +x FPATH 2>/dev/null || true
 source $ZSH/oh-my-zsh.sh
-
-# =========================
-# Homebrew
-# =========================
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -x /usr/local/bin/brew ]]; then
-  eval "$(/usr/local/bin/brew shellenv)"
-fi
 
 # =========================
 # Paths
 # =========================
-export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+# Homebrew is initialized in ~/.zprofile for login shells (Ghostty).
+# Avoid running `brew shellenv` again here; spawning brew on every tab is slow.
+export PATH="$HOME/bin:$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 export PATH="./node_modules/.bin:$PATH"
 
 # pnpm
 export PNPM_HOME="$HOME/Library/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 
-# Python
-export PATH="$HOME/.pyenv/bin:$PATH"
+# Python / pyenv (PATH only; full pyenv shell integration is lazy-loaded below)
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
 # Starship config
 export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
@@ -72,9 +73,12 @@ export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 # Tools
 # =========================
 
-# fzf
-if command -v fzf >/dev/null 2>&1; then
-  source <(fzf --zsh)
+# fzf — source static files instead of spawning `fzf --zsh` on every shell
+if [[ -r /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]]; then
+  source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+fi
+if [[ -r /opt/homebrew/opt/fzf/shell/completion.zsh ]]; then
+  source /opt/homebrew/opt/fzf/shell/completion.zsh
 fi
 
 # zoxide
@@ -92,24 +96,31 @@ if command -v starship >/dev/null 2>&1; then
   eval "$(starship init zsh)"
 fi
 
-# nvm
+# nvm — lazy load (saves ~10s on startup)
 export NVM_DIR="$HOME/.nvm"
-if [[ -s "$NVM_DIR/nvm.sh" ]]; then
-  source "$NVM_DIR/nvm.sh"
-fi
-if [[ -s "$NVM_DIR/bash_completion" ]]; then
-  source "$NVM_DIR/bash_completion"
-fi
+nvm() {
+  # Remove lazy-loader stubs. Redirect because pnpm/yarn may not be functions.
+  unfunction nvm node npm npx pnpm yarn 2>/dev/null
+  [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+  [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+  nvm "$@"
+}
+node() { nvm use >/dev/null 2>&1; node "$@"; }
+npm()  { nvm use >/dev/null 2>&1; npm  "$@"; }
+npx()  { nvm use >/dev/null 2>&1; npx  "$@"; }
+# pnpm/yarn don't need nvm auto-switch but stub if needed
 
-# pyenv
-if command -v pyenv >/dev/null 2>&1; then
-  eval "$(pyenv init - zsh)"
-fi
+# pyenv — lazy load to avoid `pyenv init` + `pyenv rehash` during terminal startup
+pyenv() {
+  unset -f pyenv
+  eval "$(command pyenv init - zsh)"
+  pyenv "$@"
+}
 
 # =========================
 # Completion styling
 # =========================
-autoload -Uz compinit && compinit
+# compinit already called by Oh My Zsh above — skip duplicate
 
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -161,7 +172,7 @@ alias nr="npm run"
 alias ns="npm start"
 alias nt="npm test"
 alias nid="npm install --save-dev"
-alias pi="pnpm install"
+# alias pii="pnpm install"
 alias pr="pnpm run"
 alias pt="pnpm test"
 alias py="python3"
@@ -286,6 +297,8 @@ REPORTTIME=5
 # =========================
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
-. "$HOME/.atuin/bin/env"
+# . "$HOME/.atuin/bin/env"
 
-eval "$(atuin init zsh)"
+if command -v atuin >/dev/null 2>&1; then
+  eval "$(atuin init zsh)"
+fi
