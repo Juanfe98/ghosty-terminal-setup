@@ -194,6 +194,62 @@ alias kgs="kubectl get svc"
 alias kgd="kubectl get deploy"
 alias kctx="kubectl config current-context"
 
+# =========================
+# Keychain helpers
+# =========================
+KPASS_REGISTRY="${HOME}/.kpass_registry"
+
+# kpass-set <service> <account>  — store password (prompted securely, never in history)
+kpass-set() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: kpass-set <service> <account>"
+    return 1
+  fi
+  security add-generic-password -U -s "$1" -a "$2" -w
+  echo "$1:$2" >> "$KPASS_REGISTRY"
+  sort -u "$KPASS_REGISTRY" -o "$KPASS_REGISTRY"
+  echo "Saved: $1 / $2"
+}
+
+# kpass-get <service> <account>  — retrieve password (copies to clipboard)
+kpass-get() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: kpass-get <service> <account>"
+    return 1
+  fi
+  local pass
+  pass=$(security find-generic-password -s "$1" -a "$2" -w 2>/dev/null)
+  if [[ -z "$pass" ]]; then
+    echo "Not found: $1 / $2"
+    return 1
+  fi
+  echo -n "$pass" | pbcopy
+  echo "Copied to clipboard: $1 / $2"
+}
+
+# kpass-del <service> <account>  — delete a stored password
+kpass-del() {
+  if [[ $# -lt 2 ]]; then
+    echo "Usage: kpass-del <service> <account>"
+    return 1
+  fi
+  security delete-generic-password -s "$1" -a "$2"
+  [[ -f "$KPASS_REGISTRY" ]] && sed -i '' "/^$1:$2$/d" "$KPASS_REGISTRY"
+  echo "Deleted: $1 / $2"
+}
+
+# kpass-list  — list all passwords stored via kpass-set
+kpass-list() {
+  if [[ ! -f "$KPASS_REGISTRY" ]] || [[ ! -s "$KPASS_REGISTRY" ]]; then
+    echo "No passwords stored yet. Use: kpass-set <service> <account>"
+    return
+  fi
+  echo "Stored credentials:"
+  while IFS=: read -r svc acct; do
+    echo "  $svc → $acct"
+  done < "$KPASS_REGISTRY"
+}
+
 # Tmux
 alias ta="tmux attach -t"
 alias tls="tmux ls"
