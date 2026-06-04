@@ -240,43 +240,35 @@ Your setup uses nvim-treesitter for improved syntax highlighting and code naviga
 
 ### Leader Key
 
-Your leader key is set to `Space`.
+Your leader key is set to `Space`. Your local leader key is set to `,`.
 
 ### Custom Keybindings
 
 Basic operations:
 ```
-<leader>w - Save file
-<leader>q - Quit Neovim
-<leader>h - Clear search highlighting
+<leader>w  - Save file
+<leader>q  - Quit Neovim
+<leader>h  - Clear search highlighting
+<leader>cp - Copy relative file path to clipboard
 ```
 
-Window navigation:
+Window, buffer, and tab navigation:
 ```
-<C-h> - Move to left window
-<C-j> - Move to down window  
-<C-k> - Move to up window
-<C-l> - Move to right window
-```
-
-Window resizing:
-```
-<C-Up> - Decrease window height
-<C-Down> - Increase window height
-<C-Left> - Decrease window width
-<C-Right> - Increase window width
-```
-
-Buffer navigation:
-```
-<Tab> - Next buffer
-<S-Tab> - Previous buffer
+<C-h/j/k/l>       - Move between windows
+<C-Up/Down>       - Resize window height
+<C-Left/Right>    - Resize window width
+<Tab>             - Next buffer
+<S-Tab>           - Previous buffer
+<leader>bb        - Open recent buffers with Telescope
+<leader>bd        - Delete current buffer safely
+<leader>tc        - Close tab
+<leader>sv        - Scratch vertical split matching current filetype
 ```
 
 Visual mode:
 ```
-< - Indent left (keeps selection)
-> - Indent right (keeps selection)
+< - Indent left and keep selection
+> - Indent right and keep selection
 J - Move selected lines down
 K - Move selected lines up
 ```
@@ -287,77 +279,198 @@ K - Move selected lines up
 
 **nvim-tree** - File explorer:
 ```
-<leader>e - Toggle file explorer
+<leader>tt - Toggle file explorer
 ```
 
-**telescope** - Fuzzy finder:
+**oil.nvim** - Directory editor/file manager:
+```
+-         - Open parent directory
+<leader>O - Open Oil in a vertical split
+```
+
+**telescope.nvim** - Fuzzy finder:
 ```
 <leader>ff - Find files
-<leader>fg - Find text (grep)
+<leader>fH - Find files from home
+<leader>fg - Live grep
+<leader>fr - Recent files in current working directory
 <leader>fb - Find buffers
 <leader>fh - Find help tags
 ```
 
+**harpoon** - Fast project file navigation:
+```
+<leader>ma - Add current file
+<leader>mm - Open Harpoon menu
+<leader>m1-4 - Jump to marked file 1-4
+<leader>mp - Previous Harpoon file
+<leader>mn - Next Harpoon file
+```
+
 ### Git Integration
 
-**lazygit** - Git client:
+**lazygit.nvim** - Git client:
 ```
 <leader>gg - Open LazyGit
 <leader>gF - Open LazyGit for current file
 ```
 
-**gitsigns** - Git status in the gutter:
-Shows git diff markers in the sign column.
+**telescope git pickers**:
+```
+<leader>gs - Git status
+<leader>gb - Git branches
+<leader>gc - Git commits
+<leader>gC - Git commits for current file
+```
+
+**diffview.nvim** - Git diff/review UI:
+```
+<leader>gv - Open Diffview for working tree
+<leader>gV - Compare with HEAD~1
+<leader>gL - Current file history
+<leader>gA - Repository file history
+<leader>gQ - Close Diffview
+<leader>gR - Refresh Diffview
+```
+
+**gitsigns.nvim** - Git status in the gutter:
+```
+]c / [c       - Next/previous hunk
+<leader>ghp   - Preview hunk
+<leader>ghi   - Preview hunk inline
+<leader>ghd   - Diff current file
+<leader>ghs   - Stage hunk/selection
+<leader>ghr   - Reset hunk/selection
+<leader>ghu   - Undo stage hunk
+<leader>ghS   - Stage buffer
+<leader>ghR   - Reset buffer
+<leader>ghb   - Full blame for current line
+<leader>ght   - Toggle current line blame
+<leader>ghq   - Send hunks to quickfix
+ih            - Select hunk text object
+```
 
 ### Code Intelligence
 
-**nvim-lspconfig** - LSP configuration:
-Provides integration with language servers.
+**nvim-lspconfig + mason.nvim** - LSP configuration and server installation.
+Configured servers:
+```
+lua_ls, ts_ls, pyright, gopls, rust_analyzer
+```
 
-**mason.nvim** - Package manager:
-Installs and manages LSP servers, linters, formatters.
+LSP/navigation keys:
+```
+gd         - Go to definition with Telescope
+gD         - Go to type definition with Telescope
+gr         - References with Telescope
+gi         - Implementations with Telescope
+K          - Hover information
+<Space>rn - Rename symbol
+<Space>ca - Code action
+<Space>f  - Format code
+<Space>e  - Diagnostic float
+[d / ]d    - Previous/next diagnostic
+<Space>q  - Diagnostics to location list
+```
 
-**nvim-cmp** - Autocompletion:
+**nvim-cmp + LuaSnip** - Autocompletion and snippets:
 ```
 <C-Space> - Trigger completion
-<C-d> - Scroll docs down
-<C-f> - Scroll docs up
-<CR> - Confirm selection
-<Tab> - Select next item
-<S-Tab> - Select previous item
+<C-d>     - Scroll docs down
+<C-f>     - Scroll docs up
+<CR>      - Confirm selection
+<Tab>     - Select next completion item or expand/jump snippet
+<S-Tab>   - Select previous completion item or jump back in snippet
 ```
 
-**LuaSnip** - Snippet engine:
-Works with nvim-cmp for snippet expansion.
+**conform.nvim** - Formatting on save:
+```
+lua: stylua
+python: ruff_format
+javascript/typescript/jsx/tsx/json/html/css/markdown: prettier
+```
+
+### Diagnostics and Lists
+
+**tiny-inline-diagnostic.nvim** - Inline diagnostics:
+```
+<leader>dt - Toggle inline diagnostics
+<leader>de - Enable inline diagnostics
+<leader>dd - Disable inline diagnostics
+```
+
+**trouble.nvim** - Diagnostics, references, quickfix, and location list UI:
+```
+<leader>xx - Workspace diagnostics
+<leader>xX - Buffer diagnostics
+<leader>xr - References
+<leader>xq - Quickfix
+<leader>xl - Location list
+```
+
+**todo-comments.nvim** - TODO/FIXME navigation and search:
+```
+]t / [t      - Next/previous todo comment
+<leader>st   - Search TODOs with Telescope
+<leader>xt   - TODOs in Trouble
+<leader>xT   - TODOs in quickfix
+```
 
 ### User Interface
 
-**onedark** - Theme:
-Dark theme based on Atom's One Dark.
+**catppuccin** - Catppuccin Mocha theme with transparent background.
 
-**lualine** - Status line:
-Enhanced status line with useful information.
+**lualine.nvim** - Status line.
 
-**bufferline** - Buffer tabs:
-Shows tabs for open buffers at the top.
+**bufferline.nvim** - Buffer tabs at the top.
 
-**indent-blankline** - Indentation guides:
-Displays vertical lines for indentation.
+**dropbar.nvim** - Winbar breadcrumbs for file path and code symbols.
 
-**which-key** - Keybinding helper:
-Shows available key bindings in a popup.
+**aerial.nvim** - Code outline/symbol sidebar:
+```
+<leader>a - Toggle Aerial
+]a / [a   - Next/previous symbol
+```
+
+**indent-blankline.nvim** - Indentation guides.
+
+**nvim-ufo** - Folding UI/provider:
+```
+zR - Open all folds
+zM - Close all folds
+zr - Open folds except kinds
+zm - Close folds by level
+```
+
+**which-key.nvim** - Keybinding helper popup.
+
+**nvim-notify** - Floating notifications.
 
 ### Code Editing
 
-**nvim-autopairs** - Auto-close brackets:
-Automatically closes brackets, quotes, etc.
+**nvim-treesitter** - Improved syntax highlighting with parsers for Lua, Vim, JS/TS/TSX, JSON, Bash, Markdown, HTML, CSS, Python, Go, Rust, and more.
 
-**Comment.nvim** - Comment toggle:
-Toggle comments with keybindings.
+**nvim-autopairs** - Auto-close brackets and quotes.
 
-**toggleterm** - Terminal integration:
+**nvim-surround** - Add/change/delete surrounding quotes, brackets, tags, etc.
+
+**Comment.nvim** - Context-aware comment toggles for regular files and JSX/TSX.
+
+**toggleterm.nvim** - Floating terminal integration:
 ```
 <C-\> - Toggle terminal
+```
+
+### Markdown
+
+**render-markdown.nvim** - Inline Markdown rendering:
+```
+<leader>mr - Toggle Markdown rendering
+```
+
+**markdown-preview.nvim** - Browser Markdown preview:
+```
+<leader>mP - Toggle browser preview
 ```
 
 ## Common Tasks
@@ -365,32 +478,39 @@ Toggle comments with keybindings.
 ### Opening and Navigating Projects
 
 1. Open Neovim in a directory: `nvim .`
-2. Use nvim-tree: Press `<leader>e` to toggle file explorer
-3. Use Telescope: 
+2. Use Telescope:
    - `<leader>ff` to find files
    - `<leader>fg` to search within files
+   - `<leader>fr` to open recent files in the current working directory
+3. Use file managers:
+   - `-` for Oil parent-directory editing
+   - `<leader>tt` for nvim-tree
+4. Use Harpoon for frequently accessed files: `<leader>ma`, then `<leader>m1`-`<leader>m4`.
 
 ### Working with Git
 
-1. View git status: Changes appear in the sign column (gitsigns)
-2. Open LazyGit: `<leader>gg`
-3. See git changes for current file: `<leader>gF`
+1. View git status markers in the sign column with gitsigns.
+2. Open LazyGit: `<leader>gg`.
+3. Review diffs with Diffview: `<leader>gv`.
+4. Preview/stage/reset hunks with gitsigns: `<leader>ghp`, `<leader>ghs`, `<leader>ghr`.
 
 ### Code Editing Workflow
 
-1. Navigate to definition: `gd`
-2. View documentation: `K`
-3. Rename symbol: `<Space>rn`
-4. Format code: `<Space>f`
-5. Use code actions: `<Space>ca`
-6. Toggle comments: Use Comment.nvim
+1. Navigate to definition: `gd`.
+2. View documentation: `K`.
+3. Rename symbol: `<Space>rn`.
+4. Format code: `<Space>f` or save the file for format-on-save.
+5. Use code actions: `<Space>ca`.
+6. Toggle comments with Comment.nvim.
+7. Inspect diagnostics with `<Space>e`, `<leader>xx`, or inline diagnostics.
 
 ### Multiple Files Management
 
-1. Open multiple files: `:e file1`, `:e file2`
-2. Navigate buffers: `<Tab>` and `<S-Tab>`
-3. Split windows: `:sp` (horizontal), `:vsp` (vertical)
-4. Navigate splits: `<C-h/j/k/l>`
+1. Open multiple files: `:e file1`, `:e file2`.
+2. Navigate buffers: `<Tab>` and `<S-Tab>`.
+3. Delete a buffer safely: `<leader>bd`.
+4. Split windows: `:sp` horizontal, `:vsp` vertical, or `<leader>sv` for a scratch vertical split.
+5. Navigate splits: `<C-h/j/k/l>`.
 
 ## Advanced Features
 

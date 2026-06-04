@@ -52,3 +52,22 @@ vim.keymap.set("n", "<leader>cp", function()
 	vim.notify("Copied to clipboard " .. path)
 end, { desc = "Copy relative file path" })
 
+vim.keymap.set("v", "<leader>ac", function()
+	require("config.agent_tmux").send_selection_to_claude()
+end, { desc = "Agent: send selection to Claude Code tmux pane" })
+
+vim.keymap.set("n", "<leader>af", function()
+	require("config.agent_tmux").send_file_to_claude()
+end, { desc = "Agent: send current file to Claude Code tmux pane" })
+
+vim.keymap.set("n", "<leader>ad", function()
+	require("config.agent_tmux").send_diagnostics_to_claude()
+end, { desc = "Agent: send diagnostics to Claude Code tmux pane" })
+
+vim.keymap.set("n", "<leader>ap", function()
+	require("config.agent_tmux").pick_claude_target()
+end, { desc = "Agent: pick Claude Code tmux pane" })
+
+-- Registers Claude tmux commands
+require("config.agent_tmux")
+
