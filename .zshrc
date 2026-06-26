@@ -144,6 +144,30 @@ alias grep="rg"
 alias find="fd"
 
 # Git
+# Create a draft GitHub PR using a body markdown file.
+# Usage: draftpr <body-file> [title]
+# Example: draftpr tickets/GCIEX-2447/PR.md "GCIEX-2447"
+draftpr() {
+  local body_file="$1"
+  local title="${2:-$(git branch --show-current 2>/dev/null)}"
+
+  if [[ -z "$body_file" ]]; then
+    echo "Usage: draftpr <body-file> [title]"
+    return 1
+  fi
+
+  if [[ ! -f "$body_file" ]]; then
+    echo "Body file not found: $body_file"
+    return 1
+  fi
+
+  if [[ -z "$title" ]]; then
+    echo "Could not infer title from git branch. Pass it explicitly: draftpr $body_file \"PR title\""
+    return 1
+  fi
+
+  gh pr create --draft --title "$title" --body-file "$body_file"
+}
 # alias g="git"
 # alias gs="git status"
 # alias ga="git add"
@@ -358,3 +382,10 @@ REPORTTIME=5
 if command -v atuin >/dev/null 2>&1; then
   eval "$(atuin init zsh)"
 fi
+
+# bun completions
+[ -s "/Users/juanfelipe.montana/.bun/_bun" ] && source "/Users/juanfelipe.montana/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
