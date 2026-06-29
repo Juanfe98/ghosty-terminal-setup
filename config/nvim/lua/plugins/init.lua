@@ -21,8 +21,21 @@ return {
 		"nvim-tree/nvim-tree.lua",
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		config = function()
-			require("nvim-tree").setup()
+			require("nvim-tree").setup({
+				-- Show only the project/root folder name at the top instead of the full ~/... path.
+				renderer = {
+					root_folder_label = function(path)
+						return "󰉋 " .. vim.fn.fnamemodify(path, ":t")
+					end,
+				},
+				-- When the tree is open, keep the current file highlighted as you move around.
+				update_focused_file = {
+					enable = true,
+					update_root = false,
+				},
+			})
 			vim.keymap.set("n", "<leader>tt", "<cmd>NvimTreeToggle<cr>", { silent = true, desc = "Explorer" })
+			vim.keymap.set("n", "<leader>tf", "<cmd>NvimTreeFindFile<cr>", { silent = true, desc = "Explorer: reveal current file" })
 		end,
 	},
 
@@ -30,7 +43,10 @@ return {
 	{
 		"nvim-telescope/telescope.nvim",
 		tag = "v0.2.0",
-		dependencies = { "nvim-lua/plenary.nvim" },
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-telescope/telescope-live-grep-args.nvim",
+		},
 		config = function()
 			local function project_relative_path(_, path)
 				local cwd = vim.uv.cwd() or vim.fn.getcwd()
@@ -58,29 +74,191 @@ return {
 				return vim.fn.fnamemodify(path, ":.")
 			end
 
+			local function filename_first_project_relative_path(opts, path)
+				local relative_path = project_relative_path(opts, path)
+				local filename = vim.fn.fnamemodify(relative_path, ":t")
+				local directory = vim.fn.fnamemodify(relative_path, ":h")
+
+				if directory == "." or directory == "" then
+					return filename
+				end
+
+				return filename .. "  " .. directory .. "/"
+			end
+
+			local live_grep_args_actions = require("telescope-live-grep-args.actions")
+
 			require("telescope").setup({
 				defaults = {
-					-- Show paths relative to the project root instead of huge absolute paths.
-					path_display = project_relative_path,
+					-- Default layout for every Telescope picker, including LSP references (`gr`).
+					layout_strategy = "horizontal",
+					layout_config = {
+						width = 0.95,
+						height = 0.85,
+						preview_width = 0.5,
+					},
+					preview = {
+						-- Start with the preview hidden so long file paths/results are easier to read.
+						-- Press <C-p> inside Telescope to toggle it back on.
+						hide_on_startup = true,
+					},
+					mappings = {
+						i = {
+							["<C-p>"] = require("telescope.actions.layout").toggle_preview,
+						},
+						n = {
+							["<C-p>"] = require("telescope.actions.layout").toggle_preview,
+						},
+					},
+					-- Show filename first, then project-relative directory, so monorepo paths do not hide filenames.
+					path_display = filename_first_project_relative_path,
+				},
+				extensions = {
+					live_grep_args = {
+						-- Make `keyword -g "*.tsx"` work naturally.
+						-- If this is true, the whole prompt becomes the search text unless you quote manually.
+						auto_quoting = false,
+						mappings = {
+							i = {
+								["<C-k>"] = live_grep_args_actions.quote_prompt(),
+								["<C-i>"] = live_grep_args_actions.quote_prompt({ postfix = " --iglob " }),
+								["<C-space>"] = live_grep_args_actions.to_fuzzy_refine,
+							},
+						},
+					},
 				},
 			})
+			require("telescope").load_extension("live_grep_args")
 			local builtin = require("telescope.builtin")
-			vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find Files" })
+			vim.keymap.set("n", "<leader>ff", function()
+				builtin.find_files()
+			end, { desc = "Find Files; <C-p> toggles preview" })
 			vim.keymap.set("n", "<leader>fH", function()
 				builtin.find_files({ cwd = vim.fn.expand("~") })
 			end, { desc = "Find Files from Home" })
-			vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Find by Grep" })
+			vim.keymap.set("n", "<leader>fg", function()
+				require("telescope").extensions.live_grep_args.live_grep_args()
+			end, { desc = "Find by Grep with filters" })
 			vim.keymap.set("n", "<leader>fr", function()
 				require("telescope.builtin").oldfiles({ only_cwd = true })
 			end, { desc = "Recent files (cwd)" })
 			vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find Buffers" })
 			vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Find Help" })
 
+			local function get_github_repo_context(callback)
+				vim.system({ "git", "remote", "get-url", "origin" }, { text = true }, function(remote_result)
+					local remote = vim.trim(remote_result.stdout or "")
+					local host, repo = remote:match("^https?://([^/]+)/(.+)%.git$")
+					if not host then
+						host, repo = remote:match("^https?://([^/]+)/(.+)$")
+					end
+					if not host then
+						host, repo = remote:match("^git@([^:]+):(.+)%.git$")
+					end
+					if not host then
+						host, repo = remote:match("^git@([^:]+):(.+)$")
+					end
+					if not host then
+						host, repo = remote:match("^ssh://git@([^/]+)/(.+)%.git$")
+					end
+					if not host then
+						host, repo = remote:match("^ssh://git@([^/]+)/(.+)$")
+					end
+
+					callback(host, repo, remote)
+				end)
+			end
+
+			local function open_commit_on_github(sha)
+				sha = vim.trim(sha or "")
+				if sha == "" then
+					vim.notify("No commit SHA found", vim.log.levels.ERROR)
+					return
+				end
+
+				vim.system({ "git", "rev-parse", sha }, { text = true }, function(rev)
+					if rev.code ~= 0 then
+						vim.schedule(function()
+							vim.notify("Could not resolve commit: " .. sha, vim.log.levels.ERROR)
+						end)
+						return
+					end
+
+					local full_sha = vim.trim(rev.stdout or sha)
+					get_github_repo_context(function(host, repo, remote)
+						vim.schedule(function()
+							if not host or not repo then
+								vim.notify("Could not parse GitHub remote origin: " .. remote, vim.log.levels.ERROR)
+								return
+							end
+
+							local url = "https://" .. host .. "/" .. repo .. "/commit/" .. full_sha
+							vim.fn.setreg("+", url)
+							vim.notify("Opening commit and copied URL:\n" .. url)
+
+							if vim.ui.open then
+								vim.ui.open(url)
+							else
+								vim.fn.jobstart({ "open", url }, { detach = true })
+							end
+						end)
+					end)
+				end)
+			end
+
+			local function selected_commit_sha(entry)
+				if not entry then
+					return nil
+				end
+
+				local candidates = { entry.value, entry.ordinal, entry.display }
+				for _, candidate in ipairs(candidates) do
+					if type(candidate) == "string" then
+						local sha = candidate:match("%f[%x](%x%x%x%x%x%x%x+)%f[^%x]")
+						if sha then
+							return sha
+						end
+					elseif type(candidate) == "table" then
+						for _, value in pairs(candidate) do
+							if type(value) == "string" then
+								local sha = value:match("%f[%x](%x%x%x%x%x%x%x+)%f[^%x]")
+								if sha then
+									return sha
+								end
+							end
+						end
+					end
+				end
+			end
+
+			local function git_bcommits_with_commit_link_action()
+				builtin.git_bcommits({
+					attach_mappings = function(prompt_bufnr, map)
+						local actions = require("telescope.actions")
+						local action_state = require("telescope.actions.state")
+
+						local open_commit = function()
+							local sha = selected_commit_sha(action_state.get_selected_entry())
+							actions.close(prompt_bufnr)
+							open_commit_on_github(sha)
+						end
+
+						map("i", "<C-p>", open_commit)
+						map("n", "<C-p>", open_commit)
+						return true
+					end,
+				})
+			end
+
+			vim.api.nvim_create_user_command("GitCommitOpen", function(opts)
+				open_commit_on_github(opts.args)
+			end, { nargs = 1, desc = "Open a GitHub commit URL for a commit SHA" })
+
 			-- Git quick access with telescope
 			vim.keymap.set("n", "<leader>gs", builtin.git_status, { desc = "Git status (Telescope)" })
 			vim.keymap.set("n", "<leader>gb", builtin.git_branches, { desc = "Git branches" })
 			vim.keymap.set("n", "<leader>gc", builtin.git_commits, { desc = "Git commits (repo)" })
-			vim.keymap.set("n", "<leader>gC", builtin.git_bcommits, { desc = "Git commits (current file)" })
+			vim.keymap.set("n", "<leader>gC", git_bcommits_with_commit_link_action, { desc = "Git commits (current file); <C-p> opens commit" })
 
 			-- Go to ~ code with telescope
 			vim.keymap.set(
