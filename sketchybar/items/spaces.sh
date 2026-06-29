@@ -1,35 +1,36 @@
 #!/usr/bin/env sh
 
+# AeroSpace fires this event on every workspace change (see aerospace.toml).
 sketchybar --add event aerospace_workspace_change
-RED=0xffed8796
-for sid in $(aerospace list-workspaces --all); do
-    sketchybar --add item "space.$sid" left \
-        --subscribe "space.$sid" aerospace_workspace_change \
-        --set "space.$sid" \
-        icon="$sid"\
-                              icon.padding_left=22                          \
-                              icon.padding_right=22                         \
-                              label.padding_right=33                        \
-                              icon.highlight_color=$RED                     \
-                              background.color=0x44ffffff \
-                              background.corner_radius=5 \
-                              background.height=30 \
-                              background.drawing=off                         \
-                              label.font="sketchybar-app-font:Regular:16.0" \
-                              label.background.height=30                    \
-                              label.background.drawing=on                   \
-                              label.background.color=0xff494d64             \
-                              label.background.corner_radius=9              \
-                              label.drawing=off                             \
-        click_script="aerospace workspace $sid" \
-        script="$CONFIG_DIR/plugins/aerospacer.sh $sid"
+
+SPACES=""
+for sid in $(aerospace list-workspaces --all 2>/dev/null); do
+    SPACES="$SPACES space.$sid"
+    sketchybar --add item space."$sid" left                            \
+        --subscribe space."$sid" aerospace_workspace_change            \
+        --set space."$sid"                                             \
+            icon="$sid"                                               \
+            icon.color=$GREY                                          \
+            icon.highlight_color=$WHITE                               \
+            icon.padding_left=9                                       \
+            icon.padding_right=9                                      \
+            label.drawing=off                                        \
+            background.color=$ACCENT_COLOR                            \
+            background.corner_radius=6                                \
+            background.height=22                                      \
+            background.drawing=off                                    \
+            click_script="aerospace workspace $sid"                  \
+            script="$PLUGIN_DIR/aerospacer.sh $sid"
 done
 
-sketchybar   --add item       separator left                          \
-             --set separator  icon=                                  \
-                              icon.font="Hack Nerd Font:Regular:16.0" \
-                              background.padding_left=15              \
-                              background.padding_right=15             \
-                              label.drawing=off                       \
-                              associated_display=active               \
-                              icon.color=$WHITE
+# Wrap all the workspace items in one rounded "bracket" background.
+sketchybar --add bracket spaces $SPACES                                \
+           --set spaces background.color=$BRACKET_COLOR               \
+                        background.corner_radius=9                    \
+                        background.height=28                          \
+                        background.border_color=$BRACKET_BORDER_COLOR \
+                        background.border_width=1
+
+# Highlight the currently focused workspace right away (before the first switch).
+sketchybar --trigger aerospace_workspace_change \
+    FOCUSED_WORKSPACE="$(aerospace list-workspaces --focused 2>/dev/null)"

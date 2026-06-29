@@ -13,7 +13,7 @@ else
   exit 1
 fi
 
-SEARCH_ROOT="/Users/juanfelipe.montana/Documents/disney/repositories"
+SEARCH_ROOT="/Users/juan/Documents/priceSmart/repositories/"
 
 [ -d "$SEARCH_ROOT" ] || {
   tmux display-message "tmux-sessionizer: search root not found"

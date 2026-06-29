@@ -1,15 +1,29 @@
 #!/usr/bin/env sh
 
-# General Icons
-LOADING=􀖇
-APPLE=􀣺
-PREFERENCES=􀺽
-ACTIVITY=􀒓
-LOCK=􀒳
+# General Icons (Nerd Font glyphs — rendered with "Hack Nerd Font")
+LOADING=
+APPLE=
+PREFERENCES=
+ACTIVITY=
+LOCK=
 MAIL=􀍜
 MAIL_OPEN=􀍜
 BELL=􀋚
 BELL_DOT=􀝗
+
+# System / widget Icons
+CLOCK=
+CALENDAR=
+CPU=
+RAM=󰍛
+
+# Battery Icons
+BATTERY_100=
+BATTERY_75=
+BATTERY_50=
+BATTERY_25=
+BATTERY_0=
+BATTERY_CHARGING=
 
 # Git Icons
 GIT_ISSUE=􀍷
