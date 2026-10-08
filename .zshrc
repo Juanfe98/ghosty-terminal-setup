@@ -389,3 +389,6 @@ fi
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+export JIRA_API_TOKEN="ATATT3xFfGF0JSTELTyAVBrsH1IOvvKmffGyuGd_hPSSZwx74Q6S-wf5L18TDQhSfx_hvft0kb2VG5-o1g6z83jVY-zS_gP46VZ68eFCXLEgnV3_DE9NFOwfhxKxsvBfLJISCN57p5qVQdqu7p_sTz-XuXriHB3GTq2wu15BI-xSL4UZRRrDmsI=F5C3E748"
+
+if command -v wt >/dev/null 2>&1; then eval "$(command wt config shell init zsh)"; fi

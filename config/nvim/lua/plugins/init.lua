@@ -1,18 +1,17 @@
 return {
-	-- Theme
+	-- Theme: colorblind-friendly light/dark schemes synced with Ghostty
 	{
-		"catppuccin/nvim",
-		name = "catppuccin",
+		"projekt0n/github-nvim-theme",
+		name = "github-theme",
 		priority = 1000,
+		lazy = false,
 		config = function()
-			require("catppuccin").setup({
-				flavour = "mocha", -- matches Ghostty Catppuccin Mocha
-				transparent_background = true,
-				styles = {
-					comments = { "italic" },
+			require("github-theme").setup({
+				options = {
+					transparent = true,
 				},
 			})
-			vim.cmd.colorscheme("catppuccin")
+			require("config.theme").setup()
 		end,
 	},
 
