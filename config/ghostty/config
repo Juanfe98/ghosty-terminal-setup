@@ -5,34 +5,33 @@ custom-shader = shaders/cursor_smear_gentleman.glsl
 # Safe configuration - does not affect shell, aliases, or work settings
 
 # Theme
-# Auto follows macOS light/dark appearance.
+# Fixed Gentleman Dark appearance (does not follow macOS appearance).
 # Manual examples:
 #   theme = gentleman-light.conf
 #   theme = gentleman-dark.conf
 # After editing, reload Ghostty config from the app menu/command palette,
 # or restart Ghostty.
 # theme = light:gentleman-light.conf,dark:gentleman-dark.conf
-# To force one manually instead, comment the line above and uncomment one below:
-theme = gentleman-light.conf
-# theme = gentleman-dark.conf
+# Gentleman Dark is active below; the appearance-following example above is disabled:
+#theme = gentleman-light.conf
+ theme = gentleman-dark.conf
 
 # Font Configuration
 font-family = JetBrainsMono Nerd Font Mono
 font-size = 14
-# Ligatures for coding symbols
+# Enable the ss01 stylistic set
 font-feature = ss01
 
 # Window Appearance
 window-padding-x = 8
 window-padding-y = 8
 background-opacity = 1
-background-blur-radius = 40 
 
 # Cursor Configuration
 cursor-style = block
 cursor-style-blink = true
 
-# Performance Optimization
+# Shell integration
 shell-integration-features = no-cursor,no-sudo,no-title
 
 # Keybindings - macOS style
@@ -67,3 +66,9 @@ confirm-close-surface = false
 # Use it by writing 'nvim' first and then the keybinding to open the file with nvim
 keybind = alt+s=write_screen_file:paste
 keybind = shift+enter=text:\x1b\r
+
+# Showcase - Work Mode 
+background-image = assets/japan-artwork-term-contrast.png
+# background-image = assets/hello-cat-buddy-contrast.png
+# background-image = assets/you-got-this-contrast.png
+background-image-opacity = 0.3
